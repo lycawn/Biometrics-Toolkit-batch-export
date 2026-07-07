@@ -20,8 +20,12 @@ import {
   rowsToCsv,
 } from "../src/hook/biometricsCore.js";
 
+const CREDIT = "Biometrics Peaks by angdev · https://angelosantoniades.dev";
+
 function printUsage() {
-  console.log(`Usage: biometrics-peaks <folder-or-file...> [--out results.csv]
+  console.log(`${CREDIT}
+
+Usage: biometrics-peaks <folder-or-file...> [--out results.csv]
 
 Reads Biometrics/DataLITE .txt exports (UTF-16LE, tab-delimited), auto-detects
 each repetition's peak on the Y-axis (goniometer) channel, and prints a
@@ -82,6 +86,7 @@ function stripQuotes(s) {
 async function promptInteractiveArgs() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   console.log("=== Biometrics Peaks ===");
+  console.log(CREDIT);
   console.log("(Δεν δόθηκαν παράμετροι — διαδραστική λειτουργία.)\n");
 
   try {
