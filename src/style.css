@@ -1,0 +1,101 @@
+:root {
+  --bg: #0b0f13;
+  --surf: #131c24;
+  --border: #233040;
+  --text: #c8dff0;
+  --muted: #5c7a90;
+  --accent: #3a9ed4;
+
+  font: 15px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#app {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 520px;
+  padding: 32px 24px;
+}
+
+.app-head {
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-title {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.app-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.app-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.app-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surf);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.14s, background 0.14s;
+}
+
+.app-btn:hover {
+  border-color: var(--accent);
+  background: #1d2b3a;
+}
+
+.app-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.app-btn-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.app-btn-hint {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}

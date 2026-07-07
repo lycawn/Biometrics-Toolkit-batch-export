@@ -1,0 +1,20 @@
+{
+  "name": "thepipwebplayerjs",
+  "version": "0.0.0",
+  "description": "Biometrics/DataLITE log analysis toolkit: browser UI and CLI for extracting per-repetition Y-axis (goniometer) peaks.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "biometrics-peaks": "./bin/biometrics-peaks.mjs"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "biometrics-peaks": "node ./bin/biometrics-peaks.mjs"
+  },
+  "devDependencies": {
+    "vite": "^8.1.0"
+  }
+}

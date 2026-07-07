@@ -1,0 +1,634 @@
+<title>Biometrics Log Analyzer</title>
+<style>
+:root {
+  --bg:       #0B0F13;
+  --surf:     #131C24;
+  --raised:   #1D2B3A;
+  --border:   #233040;
+  --text:     #C8DFF0;
+  --muted:    #5C7A90;
+  --accent:   #3A9ED4;
+  --peak:     #29C47E;
+  --trough:   #CF4E68;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  padding: 36px 20px 60px;
+}
+
+.page { max-width: 860px; margin: 0 auto; }
+
+/* ── Page header ─────────────────────────── */
+.page-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 36px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.page-title {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.page-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+/* ── Upload zone ─────────────────────────── */
+.drop-zone {
+  position: relative;
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  background: var(--surf);
+  padding: 72px 32px 60px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+}
+.drop-zone:hover,
+.drop-zone.over {
+  border-color: var(--accent);
+  background: var(--raised);
+}
+.drop-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.drop-icon { margin: 0 auto 22px; width: 36px; height: 36px; color: var(--muted); display: block; }
+.drop-label { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+.drop-hint  { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+.drop-btn {
+  display: inline-block;
+  padding: 8px 22px;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  color: var(--accent);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  pointer-events: none;
+  transition: background 0.14s;
+}
+.drop-zone:hover .drop-btn { background: rgba(58,158,212,0.08); }
+
+/* ── Results ─────────────────────────────── */
+#out { margin-top: 28px; }
+
+/* Meta strip */
+.meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--surf);
+  margin-bottom: 24px;
+}
+.meta-cell {
+  flex: 1 1 120px;
+  padding: 12px 18px;
+  border-right: 1px solid var(--border);
+}
+.meta-cell:last-child { border-right: none; }
+.meta-k {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.meta-v {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Channel cards */
+.ch-list { display: flex; flex-direction: column; gap: 10px; }
+
+.ch-card {
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--surf);
+  padding: 18px 22px 20px;
+}
+.ch-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.ch-badge {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: 2px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.ch-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ch-info {
+  margin-left: auto;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  color: var(--muted);
+  text-align: right;
+  line-height: 1.6;
+}
+
+/* Stats grid */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.stat-cell {
+  background: var(--bg);
+  padding: 13px 14px 11px;
+}
+.stat-lbl {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+.stat-val {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 20px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1;
+  white-space: nowrap;
+}
+.stat-val.hi  { color: var(--peak);   }
+.stat-val.lo  { color: var(--trough); }
+.stat-unit {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.stat-u {
+  font-size: 11px;
+  opacity: 0.65;
+  margin-left: 1px;
+  vertical-align: baseline;
+}
+
+/* Range bar */
+.range-wrap  { position: relative; margin-top: 16px; }
+.range-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  position: relative;
+  overflow: visible;
+}
+.range-fill {
+  position: absolute; top: 0; bottom: 0;
+  border-radius: 2px;
+  opacity: 0.45;
+}
+.range-zero {
+  position: absolute;
+  top: -5px; bottom: -5px;
+  width: 1px;
+  background: var(--border);
+}
+.range-dot {
+  position: absolute;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 7px;
+}
+.range-lbl {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+/* Error */
+.err-box {
+  border: 1px solid #3A1420;
+  background: #160910;
+  color: var(--trough);
+  padding: 14px 18px;
+  border-radius: 3px;
+  font-size: 13px;
+  margin-top: 16px;
+}
+
+@media (max-width: 580px) {
+  .stat-grid { grid-template-columns: repeat(3, 1fr); }
+  .ch-info { display: none; }
+}
+</style>
+
+<div class="page">
+  <header class="page-head">
+    <span class="page-title">BiometricsDataLog</span>
+    <span class="page-sub">V4 · channel peak analysis</span>
+  </header>
+
+  <div class="drop-zone" id="dropZone" role="button" aria-label="Upload log file">
+    <svg class="drop-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="6" width="30" height="26" rx="2"/>
+      <polyline points="11 18 18 11 25 18"/>
+      <line x1="18" y1="11" x2="18" y2="28"/>
+    </svg>
+    <p class="drop-label">Drop log file here</p>
+    <p class="drop-hint">Biometrics DataLite export · .log format</p>
+    <span class="drop-btn">Select File</span>
+    <input type="file" id="fileInput" accept=".log,.txt" aria-label="Upload biometrics log file">
+  </div>
+
+  <div id="out"></div>
+</div>
+
+<script>
+(function () {
+  const dropZone  = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const out       = document.getElementById('out');
+
+  const CH_COLORS = ['#3A9ED4','#29C47E','#D4943A','#B46ED4','#3AD4C4','#D46E3A'];
+
+  dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
+  dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f) processFile(f);
+  });
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) processFile(e.target.files[0]);
+  });
+
+  // ── File processing ────────────────────────────────────────
+  async function processFile(file) {
+    out.innerHTML = '<div style="padding:24px 0;color:var(--muted);font-family:\'Courier New\',monospace;font-size:11px;letter-spacing:0.1em">PARSING…</div>';
+    try {
+      const buf    = await file.arrayBuffer();
+      const parsed = parseLog(buf);
+      render(file.name, parsed);
+    } catch (e) {
+      out.innerHTML = `<div class="err-box">Parse error: ${e.message}</div>`;
+      console.error(e);
+    }
+  }
+
+  // ── Binary utilities ───────────────────────────────────────
+  function findSeq(haystack, needle, start = 0) {
+    outer: for (let i = start; i <= haystack.length - needle.length; i++) {
+      for (let j = 0; j < needle.length; j++) {
+        if (haystack[i + j] !== needle[j]) continue outer;
+      }
+      return i;
+    }
+    return -1;
+  }
+
+  function latin1Slice(bytes, start, end) {
+    let s = '';
+    for (let i = start; i < end && i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return s;
+  }
+
+  // ── Encoding detection ─────────────────────────────────────
+  function detectEncoding(bytes) {
+    // Explicit UTF-16 LE BOM: FF FE
+    if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE)
+      return { utf16le: true, bomLen: 2 };
+    // UTF-16 LE without BOM: alternating ASCII / null at start
+    if (bytes.length >= 4 &&
+        bytes[1] === 0x00 && bytes[3] === 0x00 &&
+        bytes[0] >= 0x20 && bytes[0] < 0x80 &&
+        bytes[2] >= 0x20 && bytes[2] < 0x80)
+      return { utf16le: true, bomLen: 0 };
+    return { utf16le: false, bomLen: 0 };
+  }
+
+  function findStrUtf16Le(haystack, str, start = 0) {
+    const needle = new Uint8Array(str.length * 2);
+    for (let i = 0; i < str.length; i++) {
+      needle[i * 2]     = str.charCodeAt(i);
+      needle[i * 2 + 1] = 0;
+    }
+    return findSeq(haystack, needle, start);
+  }
+
+  // ── Log parser ─────────────────────────────────────────────
+  function parseLog(buf) {
+    const bytes = new Uint8Array(buf);
+    const { utf16le, bomLen } = detectEncoding(bytes);
+
+    const MARKER = 'WirelessDigitals=';
+    let mPos = -1, dataStart = 0, hText = '';
+
+    if (utf16le) {
+      mPos = findStrUtf16Le(bytes, MARKER, bomLen);
+
+      if (mPos >= 0) {
+        // Scan 2 bytes at a time for LF (0x0A 0x00) in UTF-16 LE
+        let i = mPos + MARKER.length * 2;
+        while (i + 1 < bytes.length) {
+          if (bytes[i] === 0x0D && bytes[i + 1] === 0x00) { i += 2; continue; }
+          if (bytes[i] === 0x0A && bytes[i + 1] === 0x00) { dataStart = i + 2; break; }
+          i += 2;
+        }
+        if (dataStart === 0) {
+          let j = mPos + MARKER.length * 2;
+          while (j < bytes.length && bytes[j] !== 0x0A) j++;
+          dataStart = Math.min(j + 1, bytes.length);
+        }
+      }
+
+      const hSlice = Math.min(
+        mPos >= 0 ? mPos + MARKER.length * 2 + 512 : bytes.length,
+        bytes.length
+      );
+      hText = new TextDecoder('utf-16le').decode(bytes.slice(bomLen, hSlice));
+
+    } else {
+      const marker = new TextEncoder().encode(MARKER);
+      mPos = findSeq(bytes, marker);
+
+      const hEnd = mPos >= 0
+        ? Math.min(mPos + 256, bytes.length)
+        : Math.min(8192, bytes.length);
+      hText = latin1Slice(bytes, 0, hEnd);
+
+      if (mPos >= 0) {
+        let i = mPos + marker.length;
+        while (i < bytes.length && bytes[i] !== 0x0A) i++;
+        dataStart = i + 1;
+      }
+    }
+
+    const { channels, meta } = parseHeader(hText);
+    const analog = channels.filter(c => c.id !== 'D');
+    const totalAvail = bytes.length - dataStart;
+    const totalDeclared = analog.reduce((s, c) => s + c.sampleCount * c.bps, 0);
+    const scale = (totalDeclared > 0 && totalDeclared > totalAvail)
+      ? totalAvail / totalDeclared : 1;
+
+    let offset = dataStart;
+    for (const ch of analog) {
+      const bytes4ch = Math.min(
+        Math.floor(ch.sampleCount * scale) * ch.bps,
+        bytes.length - offset
+      );
+      ch.stats = analyze(bytes, offset, bytes4ch, ch.bps, ch.gain, ch.fullScale);
+      offset += bytes4ch;
+    }
+
+    return { channels: analog, meta };
+  }
+
+  function parseHeader(text) {
+    const lines    = text.split('\n');
+    const channels = [];
+    const meta     = {};
+    let last       = null;
+
+    for (const raw of lines) {
+      const ln = raw.trim();
+      if (ln.startsWith('Start='))    meta.start    = ln.slice(6).trim();
+      if (ln.startsWith('End='))      meta.end      = ln.slice(4).trim();
+      if (ln.startsWith('Recorded=')) meta.recorded = ln.slice(9).trim();
+
+      const m = ln.match(/^Channel\s+(\w+)\s*=\s*(.*)$/);
+      if (m) {
+        const id    = m[1];
+        const parts = m[2].trim().split(/\s+/);
+        // Extract unit token: non-numeric, non-dash string
+        const unit  = parts.find(p => /[°%a-zA-Z\/]/.test(p) && !/^-?\d+$/.test(p)) || '°';
+        last = {
+          id,
+          title:       `Channel ${id}`,
+          sampleCount: parseInt(parts[0]) || 0,
+          bps:         parseInt(parts[1]) || 2,
+          sampleRate:  parseInt(parts[2]) || 100,
+          fullScale:   parseInt(parts[3]) || 1,
+          gain:        parseInt(parts[7]) || 1,
+          unit,
+          stats: null,
+        };
+        channels.push(last);
+      }
+
+      if (ln.startsWith('Title=') && last) {
+        const t = ln.slice(6).trim();
+        if (t) last.title = t;
+      }
+
+      if (ln.startsWith('WirelessDigitals=')) break;
+    }
+
+    return { channels, meta };
+  }
+
+  function analyze(bytes, start, byteCount, bps, gain, fullScale) {
+    if (byteCount < bps) return null;
+    const view  = new DataView(bytes.buffer, bytes.byteOffset + start, byteCount);
+    const n     = Math.floor(byteCount / bps);
+    const scale = gain > 0 ? fullScale / gain : 1;
+
+    let maxR = -Infinity, minR = Infinity, sumR = 0, sumSq = 0;
+    let maxI = 0, minI = 0;
+
+    for (let i = 0; i < n; i++) {
+      let r;
+      if      (bps === 2) r = view.getInt16(i * 2, true);
+      else if (bps === 4) r = view.getInt32(i * 4, true);
+      else                r = view.getInt8(i);
+
+      if (r > maxR) { maxR = r; maxI = i; }
+      if (r < minR) { minR = r; minI = i; }
+      sumR  += r;
+      sumSq += r * r;
+    }
+
+    return {
+      max:        maxR * scale,
+      min:        minR * scale,
+      mean:      (sumR / n) * scale,
+      rms:        Math.sqrt(sumSq / n) * scale,
+      peakToPeak:(maxR - minR) * scale,
+      n,
+      maxI,
+      minI,
+    };
+  }
+
+  // ── Render ──────────────────────────────────────────────────
+  function f(v, d = 2) {
+    return (v !== null && isFinite(v)) ? v.toFixed(d) : '—';
+  }
+
+  function duration(a, b) {
+    try {
+      const p = s => {
+        const [dt, tm] = s.split(' ');
+        const [mo, dy, yr] = dt.split('/');
+        const [hh, mm, ss] = tm.split(':');
+        return new Date(+yr, mo - 1, +dy, +hh, +mm, +ss);
+      };
+      const d = (p(b) - p(a)) / 1000;
+      const m = Math.floor(d / 60), s = Math.round(d % 60);
+      return `${m}m ${String(s).padStart(2, '0')}s`;
+    } catch { return null; }
+  }
+
+  function render(filename, { channels, meta }) {
+    const dur = meta.start && meta.end ? duration(meta.start, meta.end) : null;
+
+    const metas = [
+      meta.start    && ['START',    meta.start],
+      meta.end      && ['END',      meta.end],
+      dur           && ['DURATION', dur],
+      channels.length && ['CHANNELS', channels.length],
+    ].filter(Boolean);
+
+    const metaHtml = `
+      <div class="meta-strip">
+        ${metas.map(([k, v]) => `
+          <div class="meta-cell">
+            <div class="meta-k">${k}</div>
+            <div class="meta-v">${v}</div>
+          </div>`).join('')}
+      </div>`;
+
+    const cardsHtml = `
+      <div class="ch-list">
+        ${channels.map((ch, i) => channelCard(ch, i)).join('')}
+      </div>`;
+
+    out.innerHTML = metaHtml + cardsHtml;
+  }
+
+  function channelCard(ch, idx) {
+    const color = CH_COLORS[idx % CH_COLORS.length];
+    const s     = ch.stats;
+
+    if (!s) {
+      return `
+        <div class="ch-card" style="border-left-color:${color}">
+          <div class="ch-head">
+            <span class="ch-badge">CH ${ch.id}</span>
+            <span class="ch-name">${esc(ch.title)}</span>
+          </div>
+          <div style="color:var(--muted);font-size:12px">No binary data found for this channel.</div>
+        </div>`;
+    }
+
+    // Range bar geometry: map [min,max] onto 0–100% relative to ±absExtreme
+    const absExt  = Math.max(Math.abs(s.max), Math.abs(s.min), 0.0001);
+    const toX     = v => ((v + absExt) / (absExt * 2)) * 100;
+    const zeroX   = toX(0);
+    const maxX    = toX(s.max);
+    const minX    = toX(s.min);
+    const fillL   = Math.min(minX, maxX);
+    const fillW   = Math.abs(maxX - minX);
+
+    return `
+      <div class="ch-card" style="border-left-color:${color}">
+        <div class="ch-head">
+          <span class="ch-badge">CH ${ch.id}</span>
+          <span class="ch-name">${esc(ch.title)}</span>
+          <span class="ch-info">
+            ${esc(ch.unit)} · ${ch.sampleRate} Hz<br>
+            full scale ±${ch.fullScale}
+          </span>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-cell">
+            <div class="stat-lbl">PEAK MAX</div>
+            <div class="stat-val hi">${f(s.max)}<span class="stat-u">${esc(ch.unit)}</span></div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-lbl">PEAK MIN</div>
+            <div class="stat-val lo">${f(s.min)}<span class="stat-u">${esc(ch.unit)}</span></div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-lbl">PEAK–PEAK</div>
+            <div class="stat-val">${f(s.peakToPeak)}<span class="stat-u">${esc(ch.unit)}</span></div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-lbl">MEAN</div>
+            <div class="stat-val">${f(s.mean)}<span class="stat-u">${esc(ch.unit)}</span></div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-lbl">RMS</div>
+            <div class="stat-val">${f(s.rms)}<span class="stat-u">${esc(ch.unit)}</span></div>
+          </div>
+        </div>
+
+        <div class="range-wrap">
+          <div class="range-track">
+            <div class="range-zero"  style="left:${zeroX.toFixed(2)}%"></div>
+            <div class="range-fill"  style="left:${fillL.toFixed(2)}%;width:${fillW.toFixed(2)}%;background:${color}"></div>
+            <div class="range-dot"   style="left:${maxX.toFixed(2)}%;background:var(--peak)"></div>
+            <div class="range-dot"   style="left:${minX.toFixed(2)}%;background:var(--trough)"></div>
+          </div>
+          <div class="range-labels">
+            <span class="range-lbl">${s.n.toLocaleString()} samples</span>
+            <span class="range-lbl">peak at sample ${s.maxI.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function esc(s) {
+    return String(s ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+})();
+</script>
