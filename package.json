@@ -12,9 +12,15 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "biometrics-peaks": "node ./bin/biometrics-peaks.mjs"
+    "biometrics-peaks": "node ./bin/biometrics-peaks.mjs",
+    "build:exe": "node ./scripts/build-exe.mjs"
   },
   "devDependencies": {
+    "esbuild": "^0.28.1",
+    "postject": "^1.0.0-alpha.6",
     "vite": "^8.1.0"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0"
   }
 }

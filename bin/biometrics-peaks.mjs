@@ -7,9 +7,13 @@
 // Examples:
 //   node bin/biometrics-peaks.mjs ./data
 //   node bin/biometrics-peaks.mjs ./data/1.30.1,2.txt ./data/2.20.1.txt --out peaks.csv
+//
+// Double-clicked on Windows (no arguments, no terminal already open) drops
+// into an interactive prompt instead of flashing a usage message and closing.
 
 import fs from "node:fs";
 import path from "node:path";
+import readline from "node:readline/promises";
 import {
   processFileBuffer,
   sortRows,
@@ -69,13 +73,42 @@ function printTable(rows) {
   }
 }
 
-async function main() {
-  const args = process.argv.slice(2);
-  if (!args.length || args.includes("--help") || args.includes("-h")) {
-    printUsage();
-    process.exit(args.length ? 0 : 1);
-  }
+function stripQuotes(s) {
+  const trimmed = s.trim();
+  const m = trimmed.match(/^"(.*)"$/);
+  return m ? m[1] : trimmed;
+}
 
+async function promptInteractiveArgs() {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  console.log("=== Biometrics Peaks ===");
+  console.log("(Δεν δόθηκαν παράμετροι — διαδραστική λειτουργία.)\n");
+
+  try {
+    const inputPath = stripQuotes(
+      await rl.question("Φάκελος ή αρχείο .txt (μπορείς να το σύρεις εδώ): ")
+    );
+    if (!inputPath) return null;
+
+    const outAns = stripQuotes(
+      await rl.question("Αρχείο εξόδου CSV (Enter για παράλειψη): ")
+    );
+    return { inputArgs: [inputPath], outPath: outAns || null };
+  } finally {
+    rl.close();
+  }
+}
+
+async function pauseBeforeExit(code) {
+  if (process.stdin.isTTY) {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    await rl.question("\nΠάτησε Enter για έξοδο...");
+    rl.close();
+  }
+  process.exitCode = code;
+}
+
+function parseArgs(args) {
   const outIndex = args.indexOf("--out");
   let outPath = null;
   let inputArgs = args;
@@ -83,28 +116,30 @@ async function main() {
     outPath = args[outIndex + 1];
     if (!outPath) {
       console.error("Error: --out requires a file path.");
-      process.exit(1);
+      return null;
     }
     inputArgs = [...args.slice(0, outIndex), ...args.slice(outIndex + 2)];
   }
-
   if (!inputArgs.length) {
     console.error("Error: no input folder or file given.");
     printUsage();
-    process.exit(1);
+    return null;
   }
+  return { inputArgs, outPath };
+}
 
+async function run(inputArgs, outPath) {
   for (const p of inputArgs) {
     if (!fs.existsSync(p)) {
       console.error(`Error: path not found: ${p}`);
-      process.exit(1);
+      return 1;
     }
   }
 
   const files = collectTxtFiles(inputArgs);
   if (!files.length) {
     console.error("No .txt files found.");
-    process.exit(1);
+    return 1;
   }
 
   const allRows = [];
@@ -131,6 +166,48 @@ async function main() {
     fs.writeFileSync(outPath, rowsToCsv(allRows), "utf8");
     console.log(`CSV written to ${outPath}`);
   }
+
+  return 0;
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+
+  if (args.includes("--help") || args.includes("-h")) {
+    printUsage();
+    return;
+  }
+
+  const interactive = !args.length && Boolean(process.stdin.isTTY);
+
+  if (interactive) {
+    const parsed = await promptInteractiveArgs();
+    if (!parsed) {
+      console.error("Δεν δόθηκε διαδρομή.");
+      await pauseBeforeExit(1);
+      return;
+    }
+    const code = await run(parsed.inputArgs, parsed.outPath).catch((err) => {
+      console.error("Σφάλμα:", err.message);
+      return 1;
+    });
+    await pauseBeforeExit(code);
+    return;
+  }
+
+  if (!args.length) {
+    printUsage();
+    process.exitCode = 1;
+    return;
+  }
+
+  const parsed = parseArgs(args);
+  if (!parsed) {
+    process.exitCode = 1;
+    return;
+  }
+
+  process.exitCode = await run(parsed.inputArgs, parsed.outPath);
 }
 
 main();

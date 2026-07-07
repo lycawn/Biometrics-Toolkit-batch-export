@@ -7,7 +7,8 @@ It solves one specific problem: instead of manually eyeballing a chart to find t
 ## Features
 
 - **Single-file log analyzer** — drop in one `BiometricsDataLog` export and see per-channel stats (max, min, mean, RMS, peak-to-peak).
-- **Batch peak extractor** — drop in many `.txt` exports at once and get a table of every repetition's peak angle, ready to export as CSV.
+- **Batch peak extractor** — drop in many `.txt` exports at once and get a per-file range-of-motion chart plus a combined peaks table.
+- **Three export formats** — CSV (data only), a self-contained HTML report (table + chart, no dependencies to open it), and an Excel workbook (data sheet + a sheet with the chart embedded as an image).
 - **CLI** — same peak-extraction logic, runnable from a terminal over a whole folder, for scripting/automation.
 
 ## Getting started
@@ -21,7 +22,9 @@ npm run build      # production build
 Open the app, and use either:
 
 - **Ανάλυση Αρχείου Log** — analyze a single file's channels.
-- **Batch Εξαγωγή Κορυφών** — select multiple `.txt` files and get a combined peaks table with CSV export.
+- **Batch Εξαγωγή Κορυφών** — select multiple `.txt` files and get a per-file range-of-motion chart, a combined peaks table, and CSV / HTML / Excel export buttons.
+
+Each file's chart is a floating bar per repetition spanning **preceding DF → peak PF**, so the excursion is visible at a glance; hover (or focus) a bar for the exact values.
 
 ## CLI usage
 
@@ -33,6 +36,33 @@ node bin/biometrics-peaks.mjs ./data
 node bin/biometrics-peaks.mjs ./data/1.30.1,2.txt ./data/2.20.1.txt --out peaks.csv
 npm run biometrics-peaks -- ./data --out peaks.csv
 ```
+
+### Standalone executable (no Node.js required)
+
+For sharing with people who don't have Node.js installed, build a single-file
+executable using Node's built-in [Single Executable Application](https://nodejs.org/api/single-executable-applications.html) support:
+
+```bash
+npm run build:exe
+```
+
+This produces `build/biometrics-peaks.exe` (or `build/biometrics-peaks` on
+macOS/Linux) — a self-contained ~80MB binary (it embeds the whole Node
+runtime) that runs with no separate install:
+
+```bash
+build\biometrics-peaks.exe ./data --out peaks.csv
+```
+
+The build is local-only (`build/` is gitignored); run `npm run build:exe`
+again whenever the CLI source changes. On Windows/macOS you may see an
+"unknown publisher" / unsigned-binary warning the first time you run it —
+that's expected for an unsigned local build, not an error.
+
+**Double-clicking it** (instead of running it from a terminal) drops into an
+interactive prompt — it asks for a folder/file path and an optional CSV
+output path, then pauses with "Πάτησε Enter για έξοδο…" before closing, so
+the console window doesn't just flash and disappear.
 
 Point it at a folder (it scans for `.txt` files) or at specific files. It prints a table to the terminal and, with `--out`, writes a CSV (UTF-8 with BOM, `;`-delimited — opens cleanly in Excel).
 
@@ -75,16 +105,23 @@ Each detected peak also records its **preceding trough** (e.g. the dorsiflexion 
 src/
   hook/
     biometricsCore.js         # shared parsing + peak-detection logic (no DOM)
+    biometricsChart.js         # shared SVG chart builder + tooltip + PNG rasterizer
     BiometricsAnalyzer.js      # browser: single-file channel stats modal
-    BiometricsBatchAnalyzer.js # browser: batch peak-extraction modal
+    BiometricsBatchAnalyzer.js # browser: batch peak-extraction modal + exports
   components/UI/App.js         # app shell / buttons
 bin/
   biometrics-peaks.mjs         # CLI entry point
+scripts/
+  build-exe.mjs                # builds the standalone executable (npm run build:exe)
 ```
 
 ## Contributing
 
-Issues and pull requests are welcome. This project intentionally has no build dependencies beyond Vite — keep it that way unless there's a strong reason not to.
+Issues and pull requests are welcome. This project intentionally keeps its dependency footprint small:
+- `exceljs` (runtime dependency, for the Excel export) is lazy-loaded only when that export button is clicked, so it never touches the initial page load.
+- `esbuild` and `postject` (dev dependencies) are only used by `npm run build:exe` to produce the standalone executable — they never ship in the browser app or the plain CLI.
+
+Keep it that way unless there's a strong reason not to.
 
 ## License
 
