@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "description": "Biometrics/DataLITE log analysis toolkit: browser UI and CLI for extracting per-repetition Y-axis (goniometer) peaks.",
   "license": "MIT",
+  "author": {
+    "name": "Angelos Antoniades",
+    "url": "https://angelosantoniades.dev"
+  },
   "private": true,
   "type": "module",
   "bin": {

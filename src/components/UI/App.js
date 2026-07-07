@@ -13,6 +13,10 @@ export const appUI = () => `
         <span class="app-btn-hint">Πολλαπλά αρχεία · peak ανά επανάληψη σε °</span>
       </button>
     </div>
+
+    <footer class="app-footer">
+      Made by <a href="https://angelosantoniades.dev" target="_blank" rel="noopener noreferrer">Angelos Antoniades</a>
+    </footer>
   </div>
 `;
 //   <button id="analyze-log-btn" class="app-btn">

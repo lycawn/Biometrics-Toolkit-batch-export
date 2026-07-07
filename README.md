@@ -123,6 +123,10 @@ Issues and pull requests are welcome. This project intentionally keeps its depen
 
 Keep it that way unless there's a strong reason not to.
 
+## Author
+
+Made by [Angelos Antoniades](https://angelosantoniades.dev).
+
 ## License
 
 [MIT](LICENSE)
