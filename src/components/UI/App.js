@@ -1,7 +1,7 @@
 export const appUI = () => `
   <div class="app-shell">
     <header class="app-head">
-    <h1>ΓΑΜΩΜΕΤΡΟ 1.1</h1>
+    <h1>Biometrics Data Analyzer 1.1</h1>
       <div class="app-title">Biometrics Toolkit</div>
       <p class="app-sub">Ανάλυση αρχείων Biometrics/DataLITE και εξαγωγή κορυφών (peaks) ανά επανάληψη.</p>
     </header>
